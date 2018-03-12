@@ -1,0 +1,728 @@
+#!/bin/bash
+DBPATH="/home/mira/project_bash";
+declare -a DBARR ;
+#set -x
+show_menus() {
+        echo "~~~~~~~~~~~~~~~~~~~~~"
+        echo " M A I N - M E N U"
+        echo "~~~~~~~~~~~~~~~~~~~~~"
+        echo "1. Creat Database"
+        echo "2. Creat Table"
+        echo "3. Display Table"
+        echo "4. Remove Table"
+        echo "5. Alter Table"
+        echo "6. Sort Table"
+        echo "7. Add Record"
+        echo "8. Remove Record"
+        echo "9. Edit Record"
+        echo "10.select Records"
+        echo "11. Remove Database"
+        echo "12.exit"
+        echo "~~~~~~~~~~~~~~~~~~~~~"
+}
+##############################CREATE DATABASE#########################
+creatDb(){
+	read -p "Enter Database Name :" dbName;
+	if [[ ! -d $DBPATH/$dbName ]];
+		then	mkdir $DBPATH/$dbName;
+				if [[ $? -eq 0 ]]; then
+				  echo $dbName" Database Created Successfully" ;				else
+				echo "Error Done While Creating the Database" ;
+				fi
+	else
+		echo "This Database is Exists";
+	fi
+
+
+}
+
+dropDB(){
+  #set -x
+  read -p "enter database name:" database;
+          if [[ ! -d $DBPATH/$database ]] 
+            then
+               echo "DB not found!"
+    
+        else
+              rm -r $DBPATH/$database
+              echo 'DB deleted successfully'
+        fi 
+}
+###############################CREATE TABLE#############################
+createTl(){
+read -p "Enter DB Name : " database ;	
+read -p "Enter Table Name : " tlName ;
+
+	if [[ ! -e $DBPATH/$database/$tlName ]] && [[ $tlName != "" ]]
+		then	
+			touch $DBPATH/$database/$tlName;
+			chmod +x $DBPATH/$database/$tlName;
+			if [[ $? -eq 0 ]]; then
+				echo -e "#################$tlName Structure###############" > $DBPATH/$database/$tlName;
+			    echo "Table Name:$tlName " >> $DBPATH/$database/$tlName;
+			    read -p "Enter The Number Of Columns : " tlCol;
+			    echo "The Number Of Columns Is:$tlCol" >> $DBPATH/$database/$tlName;
+			    echo -e "#################$tlName Columns###############" >> $DBPATH/$database/$tlName;
+			    for (( i = 1; i <= tlCol ; i++ )); do
+
+			    	read -p "Enter Name Of The Column Number [$i] : " ColName ;
+			    	colArr[$i]=$ColName ; 
+      				echo  -n "$ColName" >> $DBPATH/$database/$tlName ;
+      				PS3="Enter Column $ColName Type";
+      				select colType in Number String
+      				do
+      					case $colType in
+      						"Number")
+								echo -e ":Number" >> $DBPATH/$database/$tlName;
+      							break ;
+      							;;
+      						"String")
+								echo -e ":String" >> $DBPATH/$database/$tlName;
+      							break ;
+      							;;
+      						*)
+								echo "You Must Choose The Column Data Type"
+      					esac
+      				done
+			    done
+
+			    while true;
+                            do
+			    	i=1;
+				    for col in "${colArr[@]}"; do
+					    echo $i")"$col;
+					    i=$((i+1)) ;
+				    done
+			    	read -p "Detect Primarykey value : " Pkey;
+			    	if [ $Pkey -le $tlCol -a $Pkey -gt 0 ]
+		        	then 
+		            	echo $Pkey >> $DBPATH/$database/$tlName;
+		            	break ;
+			        else
+			        	echo "You Must Detect Primarykey";
+			         	continue ;
+			       	fi 	
+			    done
+			    colArrIndex=1 
+		        while [ $colArrIndex -le $tlCol ]
+		        do
+		         if [ $colArrIndex -eq $tlCol ]
+		          then echo -e "${colArr[colArrIndex]}" >> $DBPATH/$database/$tlName; # we can here add the primary key attribur as a third feild
+		         else 
+		          echo -n "${colArr[colArrIndex]}:" >> $DBPATH/$database/$tlName;
+		         fi 
+		         colArrIndex=$((colArrIndex+1));
+		        done
+		       echo "#########tablecol###########" >> $DBPATH/$database/$tlName;  
+           colArrIndex=1 
+            while [ $colArrIndex -le $tlCol ]
+            do
+             if [ $colArrIndex -eq $tlCol ]
+              then echo -e "${colArr[colArrIndex]}" >> $DBPATH/$database/$tlName; # we can here add the primary key attribur as a third feild
+             else 
+              echo -n "${colArr[colArrIndex]}:" >> $DBPATH/$database/$tlName;
+             fi 
+             colArrIndex=$((colArrIndex+1));
+            done
+		    echo "#########tableData###########" >> $DBPATH/$database/$tlName;  
+
+				echo $tlName" Table Created Successfully";
+			else	
+				echo "Error Done While Creating the Table" ;
+			fi
+	else	
+		echo "This Table  Exists";
+	fi
+	return $Cho;
+
+}
+##############################SHOW TABLE#########################
+showTl(){
+read -p "enter database name:" database;	
+read -p "Enter Table Name To Show:- " tblName
+	 TblName=$DBPATH/$database/$tblName;
+	 
+
+        echo "Table Data And  Structure : ";
+
+ cat $TblName;
+
+ return $tCho
+}
+	
+#####################################ALTER TABLE#####################
+alterTl(){
+  echo "-------------------"
+  echo "1-RenameTable"
+  echo "2-DeleteField" 
+  echo "3-AddField"
+  echo "4-Change datatype for field"
+  echo "5- Bake to Main Menu"
+  echo "-------------------"
+  read_options_alter
+}
+
+RenameTable(){
+  read -p "enter database name:-" database; 
+  read -p "Enter Table Name Want to Edite:- " tblName
+  read -p "Enter New Table Name:-" NewTblName
+    TblName=$DBPATH/$database/$tblName;
+    #$DBPATH/$database/$tblName $DBPATH/$database/$NewTblName
+
+  sed -i 's/'"$tblName"'/'"$NewTblName"'/' "$database/$tblName"
+  mv  $DBPATH/$database/$tblName $DBPATH/$database/$NewTblName
+  rm -f $DBPATH/$database/$tblName
+   #chmod +x $DBPATH/$database/$NewTblName;
+     if [[ $? == 0 ]]
+  then
+    echo "Table Renamed Successfully"
+  else
+   echo "Error Renaming Table $tblName"
+  fi
+} 
+
+########################Delete Field###############################
+DeleteField(){ 
+  read -p "enter database name:-" database; 
+  read -p "Enter Table Name Want to Edite:- " tableName
+  read -p "Enter Name of column You want to delete:-" colName 
+  TblName=$DBPATH/$database/$tableName;
+  sed '1,/^#########tablecol###########$/d' $TblName > $TblName.1
+colNumber=$(awk 'BEGIN{FS=":"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$colName'") print i }}}' $TblName.1)
+
+ cols=$(awk 'BEGIN{FS=":"}{if(NR==1){ print NF }}' $TblName.1)
+                 
+          if [[ $colNumber == $cols ]]
+          then 
+
+           sed  -i "s/:[^:]*$//" $TblName.1
+          
+          else
+                 sed  -i "s/[^:]*://${colNumber}" $TblName.1
+          fi
+ neww=$(cat $TblName.1)
+ # oldd=$(sed '1,/^#########tablecol###########$/d' $TblName)
+
+ # echo $neww
+ # echo $oldd
+
+sed -i 's/$oldd/$neww/' $TblName
+awk -v col=$colName ' 
+BEGIN{ FS = ":" ; count = 0 ; }
+{ 
+  if( count < 3) { 
+    if( match ( $0 , "#" ) ) {
+     count++ ;
+    }
+  if( ! match ( $0 , col ) ) { 
+    if( NR == 3 ) { 
+      print $1 , ":" , ( ($2) - 1 ) ;
+    } else { 
+      print $0 ; 
+    }
+  }
+}
+}' $TblName > mytetadata 
+
+cat mytetadata > $TblName
+cat $TblName.1 >> $TblName
+# cat neww >> $TblName
+
+  #sed -i -r 's/\S+//$delcolnum' $database/$tblName 
+  #cut -d: -f $delcolnum
+  #sed -i -r 's/(\s+)?\S+//$delcolnum' $database/$tblName
+  #sed -n '$p' tableName
+  #cut -d, -f delcolnum
+  #awk -i inplace '{sub(/^\S+\s*/,"")}1' tableName  
+  #awk -i inplace '{$0=gensub(/\s*\S+/,"",$delcolnum)}1' tblName 
+} 
+##########################ADD Field DataType###########################
+
+AddField(){
+read -p "enter database name:-" database;  
+read -p "Enter Table Name Want to Edite:- " tableName
+read -p "Enter The Number Of Columns : " ColNum;
+TblName=$DBPATH/$database/$tableName;
+
+for (( i = 1; i <= ColNum ; i++ ));
+do
+read -p "Enter Name Of The Column Number [$i] : " ColName ;
+colArr[$i]=$ColName ; 
+echo  -n "$ColName" >> $DBPATH/$database/$tableName;
+PS3="Enter Column $ColName Type";
+    select colType in Number String
+    do
+    case $colType in
+       "Number")
+   echo -e ":Number" >> $DBPATH/$database/$tableName;
+         break ;
+         ;;
+       "String")
+   echo -e ":String" >> $DBPATH/$database/$tableName;
+         break ;
+         ;;
+       *)
+   echo "You Must Choose The Column Data Type"
+   esac
+   done
+ done
+}
+
+###########################Rename Field##################################
+Changedatatype(){
+read -p "enter database name:-" database; 
+read -p "Enter Table Name Want to Edite:- " tblName
+read -p "Enter Column Name to change datatype:- " ColName;
+read -p "Enter Old datatype:-" oldtype
+read -p "Enter New datatype:-" newtype
+TblName=$DBPATH/$database/$tblName;
+sed -i "s/^${ColName}:*${oldtype}*/${ColName}:${newtype}/" "$database/$tblName"
+}
+
+read_options_alter(){
+        local choice
+        read -p "Enter choice [ 1 - 5] " choice
+        case $choice in
+                1) RenameTable ;;
+                2) DeleteField ;;
+                3) AddField ;;
+                4) Changedatatype;;
+                5) show_menus ;;
+        *) echo "plz choose a number from our menu"
+            
+        esac
+}
+
+
+
+##########################SORT TABLE########################
+sortTl(){
+	read -p "enter database name:" database;	
+	read -p "Enter Table Name :- " tblName
+	TblName=$DBPATH/$database/$tblName;
+	cp /dev/null /$DBPATH/$database/.newfile 
+	neew=/$DBPATH/$database/.newfile;
+	sed '1,/^#########tableData###########$/d' $TblName >> $neew
+	cat $neew
+	read -p "enter column number: " colkey
+	select Type in ASC DESC
+      				do
+      					case $Type in
+      						"ASC")
+               # allcol=$(sed '1d' $neew)
+								sort -t: -k $colkey $neew 
+      							break;
+      							;;
+      						"DESC")
+								sort -r -t: -k $colkey $neew
+      							break;
+      							;;
+      						*)
+								echo "you must choose a value <Enter 1 or 2>"
+								#sort -t: -k $colkey $neew 
+
+      					esac
+      				done
+}
+
+#####################SELECTION###################################
+selectRec(){
+  echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  echo "what do you want to select ! "
+  echo "1. select All"
+  echo "2. select by one field"
+  echo "3.select by many fields"
+  echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+          local choice
+        read -p "Enter choice [ 1 - 3] " choice
+        case $choice in
+                1) selectAll ;;
+                2) selectOneField ;;
+                3) selectManyFields ;;
+                *) echo "not PLZ enter a valid choice"
+esac
+}
+selectAll(){
+	read -p "enter database name:" database;	
+	read -p "Enter Table Name :- " tblName
+	TblName=$DBPATH/$database/$tblName;
+	cp /dev/null /$DBPATH/$database/.newfile 
+	neew=/$DBPATH/$database/.newfile;
+	sed '1,/^#########tablecol###########$/d' $TblName >> $neew
+	#cat $neew
+	read -p "enter the column name : " keyword
+
+Fieldnum=$(awk 'BEGIN{FS=":"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$keyword'") print i}}}' $neew)
+  if [[ $Fieldnum == "" ]]
+  then
+    echo "Not Found"
+    break
+fi
+	read -p "select all from $tblName where $keyword = " wordkey
+
+	#selected=/$DBPATH/$database/selected 
+rm "$DBPATH/$database/selected.html"
+rm "$DBPATH/$database/selected.csv"
+	resultult=$(sed -n -e'/'$wordkey'/p' $neew)
+	echo "done"
+
+ read -p "Enter output format HTML or CSV : " myoutput;
+
+ if [[ -z $resultult ]]
+                then
+                  echo "No resultults"
+                else
+      case $myoutput in
+      HTML)
+  cp /dev/null /$DBPATH/$database/selected.html 
+
+        echo "$resultult <br>" > "/$DBPATH/$database/selected.html";;
+      CSV) 
+  cp /dev/null /$DBPATH/$database/selected.csv
+
+              echo "$resultult" > "/$DBPATH/$database/selected.csv";;
+      *) echo "PLZ enter a valid choice"
+            esac
+  
+                fi
+	
+	#allfileds=$(grep -o ':' $selected | wc -l)
+	#lines=$(wc -l < $selected)
+	#NumOfFields=$(( ($allfileds/$lines)+1 ))
+	#echo $NumOfFields 
+}
+selectOneField(){
+  read -p "enter database name:" database;  
+  read -p "Enter Table Name :- " tblName
+  TblName=$DBPATH/$database/$tblName;
+  cp /dev/null /$DBPATH/$database/.newfile 
+  neew=/$DBPATH/$database/.newfile;
+  sed '1,/^#########tablecol###########$/d' $TblName >> $neew
+
+  read -p "Enter Field Name " Field
+        Fieldnum=$(awk 'BEGIN{FS=":"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$Field'") print i}}}' $neew)
+  if [[ $Fieldnum == "" ]]
+  then
+    echo "Not Found"
+  else
+    rm "$DBPATH/$database/selected.html"
+rm "$DBPATH/$database/selected.csv"
+  read -p "select $Field from $tblName where 'enter keyword': " condition
+  read -p "Enter myoutput HTML or CSV : " myoutput;
+  result=$(egrep $condition $neew | cut -d ":" -f$Fieldnum)
+  if [[ -z $result ]]
+        then
+              echo "No results"
+        else
+                       case $myoutput in
+      HTML)
+        echo "$result <br>" > "/$DBPATH/$database/selected.html";;
+      CSV) 
+              echo "$result" > "$DBPATH/$database/selected.csv";;
+      *) echo "PLZ enter a valid choice"
+            esac
+
+       fi
+ fi
+}
+selectManyFields(){
+    read -p "enter database name:" database;  
+  read -p "Enter Table Name :- " tblName
+  TblName=$DBPATH/$database/$tblName;
+  cp /dev/null /$DBPATH/$database/.newfile 
+ 
+ 
+  neew=/$DBPATH/$database/.newfile;
+  sed '1,/^#########tablecol###########$/d' $TblName >> $neew
+  #cat $neew
+
+
+read -p "Enter Fields you want to select by " Fields
+  IFS=' ' read -r -a array <<< "$Fields"
+read -p "select $Fields from $tblName where 'enter keyword[s]' : " condition;
+read -p "Enter myoutput HTML or CSV : " myoutput;
+rm "$DBPATH/$database/selected.html"
+rm "$DBPATH/$database/selected.csv"
+for element in "${array[@]}"
+do
+   : 
+   Fieldnum=$(awk 'BEGIN{FS=":";}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$element'") print i}}}' $neew)
+
+    if [[ $Fieldnum == "" ]]
+    then
+      echo "Not Found"
+    else
+    result=$(egrep $condition $neew | cut -d ":" -f$Fieldnum)
+    echo $result
+
+                   case $myoutput in
+      HTML)
+ #cp /dev/null /$DBPATH/$database/selected.html
+        echo "$result <br>"  >> "$DBPATH/$database/selected.html";;
+        
+      CSV) 
+ #cp /dev/null /$DBPATH/$database/selected.csv
+              echo "$result" >> "$DBPATH/$database/selected.csv";;
+      *) echo "PLZ enter a valid choice"
+       esac
+                fi
+   
+    
+done
+  
+}
+
+###########################EDITE RECORD##########################
+editRec(){
+	
+  read -p "enter database name:" database;
+read -p "Enter Table Name Want To Egite It:- " tblName
+  TblName=$DBPATH/$database/$tblName;
+  read -p "Enter a value of a field You Want To update its row:-" fieldName
+  read -p "Enter the new value of a field You Want To update :-" updated
+
+  cd $DBPATH/$database
+
+  sed -i "s/$fieldName/$updated/g" $TblName
+
+  
+}
+ 
+
+
+###############################ADD RECORD###########################
+declare -r FND=1
+declare -r NOTFND=0
+
+
+function chk_pk()
+{
+    sendPkVal=$1 #the user value
+      
+       #show_table_info #######
+    noCols=`awk -F: '{if (NR == 3) print $2 }' $TblName`
+	ignoredLines=$(($noCols+7))
+	ignoredLines=$((`cat $TblName | wc -l `-ignoredLines))
+	  
+	pkVal=$((noCols+5)) 
+	pkVal=`cut -f1 -d: $TblName | head -$pkVal  | tail -1 ` #the pk value not pk name
+	 tstFound=` tail -$ignoredLines $TblName | cut -f$pkVal -d: | grep -w $sendPkVal ` #grep -x or -w or -wn
+	  [ $tstFound ] && echo $FND || echo $NOTFND
+     
+}
+
+
+function get_column_type()
+{
+  #show_table_info #######
+  curNoCols=$1 #index to the column which be enterd
+  
+  noCols=$((`awk -F: '{if (NR == 3) print $2 }' $TblName`))
+  
+  curCellDataType=` cut -f2 -d: $TblName | head -$((noCols+4))  | tail -$noCols | head -$curNoCols | tail -1 `
+  if [ $curCellDataType = "Number" ] 
+   then 
+     echo $FND
+  else
+     echo $NOTFND
+  fi  
+  
+  #echo $curCellDataType
+
+}
+
+############################################################
+declare -a tblColArr
+function show_columns()
+{
+       TblName=$1
+       colArrIndex=1      
+       noCols=`awk -F: '{if (NR == 3) print $2 }' $TblName`
+       lineToShow=$((noCols+6)) # this line contains the table column's names
+       pkVal=`cut -f1 -d: $TblName | head -$((noCols+5))  | tail -1 `   #the pk value not pk name
+       
+       pkCol=$((pkVal+4))
+       pkColName=`cut -f1 -d: $TblName | head -$pkCol  | tail -1 `   
+       echo "Table Columns : "
+       while [ $colArrIndex -le $noCols ]
+        do
+         curColName=`cut -f$colArrIndex -d: $TblName | head -$lineToShow  | tail -1 ` # to show the names of the columns
+ 	 tblColArr[$colArrIndex]=$curColName  
+         echo  " $((colArrIndex)). $curColName " 
+	 colArrIndex=$((colArrIndex+1)) 
+        done  
+       echo "$pkColName Is Primary Key"
+      
+       
+}
+
+#this function for Checking the column data types
+function chk_column_type()
+{
+   sendColVal=$1 #the user value
+   sendColValType=${sendColVal//[^0-9]/} 
+   if [[ $sendColVal == $sendColValType ]]
+    then 
+      echo $FND
+   else
+      echo $NOTFND   
+   fi   
+ 
+}
+addRec(){
+read -p "enter database name:" database;	
+read -p "Enter Table Name :- " tblName
+ TblName=$DBPATH/$database/$tblName;
+ 	noCols=$((`awk -F: '{if (NR == 3) print $2 }' $DBPATH/$database/$tblName`));
+	  ###############################################################
+	  ignoredLines=$(($noCols+7))
+	  ignoredLines=$((`cat $DBPATH/$database/$tblName | wc -l `-ignoredLines))
+	  pkVal=$((noCols+5)) 
+	  pkVal=`cut -f1 -d: $DBPATH/$database/$tblName | head -$pkVal  | tail -1 ` #the pk value not pk name
+	  
+	 ####################### 
+	 curNoCols=1 #index to the column which be enterd
+	 echo "Insert The Columns Values In this Sequense : " # You Want To Insert Into..pk mandatory "
+	 # to display the columns of the selected table 
+	 show_columns $DBPATH/$database/$tblName          
+	 
+	 while [ $curNoCols -le $noCols ]
+	 do
+	  ################################## Check The Cell Data Type #################
+	  while true 
+	  do 
+	   read -p "Enter The $curNoCols Cell Value [You Must Enter Value ] : "  cellValu # update using pk
+	    
+	        curCellDataType=$(get_column_type $curNoCols )
+	        curColDataType=$(chk_column_type $cellValu )
+	      
+	        if [[ $cellValu ]] && [[ $curCellDataType -eq $curColDataType ]] && [[ $curCellDataType -eq 1 ]]
+	          then break 
+	         
+	        elif [[ $cellValu ]] && [[ $curCellDataType -eq $curColDataType ]] && [[ $curCellDataType -eq 0 ]]
+	          then break 
+	          
+	         else
+	             {
+	              echo "Column Data Type Does Not Match "
+	    
+	             }  
+	         fi  
+	                
+	     done
+	      
+	  ################### Check The Primary Key Value ##################  
+	  if [ $curNoCols -eq $pkVal ]
+	  then 
+	    {
+	          chkPkRtrn=$(chk_pk $cellValu)
+	          if [ $chkPkRtrn -eq 1 ]
+	           then
+	            {
+	               echo "There Is A Row Has This Pk Val ... Try Again"
+	               break             
+	            
+	            }
+	          
+	          fi
+	       }  
+	     fi
+	     
+	     ####################################################################
+	      if [ $curNoCols -eq $noCols ]
+	       then echo -e "$cellValu" >> $DBPATH/$database/$tblName 
+	      else
+	        echo -n "$cellValu:" >> $DBPATH/$database/$tblName  
+	      fi
+	  
+	  curNoCols=$((curNoCols+1))
+	 done
+	 return $tCho;
+ 
+  
+ 
+}
+#################################DROP RECORD###########################
+#Get Primarykey Line Number
+
+function row_line_no()
+{
+  
+  
+  TblName=$1 # the send table
+  rowToDisplay=$2 # the send pk
+  ########## table Info ###########
+  noCols=`awk -F: '{if (NR == 3) print $2 }' $TblName`
+  ignoredLines=$(($noCols+7))
+  ignoredLines=$((`cat $TblName | wc -l `-ignoredLines))
+  
+  pkVal=$((noCols+5)) 
+  pkVal=`cut -f1 -d: $TblName | head -$pkVal  | tail -1 ` #the pk value not pk name
+  #################################
+   pkFndLine=`tail -$ignoredLines $TblName | grep -wn $rowToDisplay | cut -f1 -d: `
+   pkFndLine=$(($pkFndLine+$noCols+7))
+   
+   echo $pkFndLine 
+}
+
+dropRec(){
+     read -p "enter database name:" database;
+     read -p "Enter Table You Want To delete From:-" tblName
+     TblName=$DBPATH/$database/$tblName;
+     read -p "Enter a word in a field You Want To Delete its row:-" fieldName
+
+ #pwd
+ cd $DBPATH/$database
+ #touch trach
+ #var=$(sed -e "/$fieldName/d" $TblName>>$DBPATH/$database/trash)
+sed -i "/$fieldName/d" $TblName
+#trash= ./bash_project/database/trach
+
+ #echo $var
+}
+
+#####################DROP TABLE######################### 
+dropTl(){
+	#set -x
+	read -p "enter database name:" database;
+	read -p "Choose Table You Want To Drop It : " fname;
+		    	if [ ! -f $DBPATH/$database/$fname ] 
+		    		then
+   						 echo "File not found!"
+    
+ 				else
+        			rm $DBPATH/$database/$fname
+        			echo 'file deleted successfully'
+				fi 
+}
+
+
+read_options(){
+        local choice
+        read -p "Enter choice [ 1 - 10] " choice
+        case $choice in
+                1) creatDb ;;
+                2) createTl ;;
+                3) showTl ;;
+                4) dropTl ;;
+                5) alterTl  ;;
+                6) sortTl ;;
+                7) addRec  ;;
+                8) dropRec ;;
+                9) editRec ;;
+				        10) selectRec ;;
+                11) dropDB ;;
+                12) exit ;;
+				        *) echo "plz choose a number from our menu"
+            
+        esac
+}
+
+trap '' SIGINT SIGQUIT SIGTSTP
+
+while true
+do
+
+        show_menus
+        read_options
+done
